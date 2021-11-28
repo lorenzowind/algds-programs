@@ -9,24 +9,29 @@ public class App {
     public static void main(String[] args) {
         String[] testPaths = new String[] { 
             "caso04.txt",
-            "caso05.txt",
-            "caso06.txt",
-            "caso07.txt",
-            "caso08.txt",
-            "caso09.txt",
-            "caso10.txt",
+            // "caso05.txt",
+            // "caso06.txt",
+            // "caso07.txt",
+            // "caso08.txt",
+            // "caso09.txt",
+            // "caso10.txt",
         };
 
         for (String testPath : testPaths) {
             TribeTree tribeTree = readTestCase(testPath);
-            System.out.println(tribeTree.getFirstWarriorName());
+            System.out.println(
+                tribeTree.getWarriorWithMoreLands().getWarriorName()
+            );
         }
     }
 
     static TribeTree readTestCase(String testPath) {
         Path path = Paths.get("src/casos/" + testPath);
 
-        try (BufferedReader reader = Files.newBufferedReader(path, Charset.defaultCharset())) {
+        try (
+            BufferedReader reader = 
+                Files.newBufferedReader(path, Charset.defaultCharset())
+        ) {
             String aux[];
             String s = reader.readLine();
 
@@ -36,8 +41,9 @@ public class App {
                 firstWarriorLands = Integer.parseInt(s);
 
             String line = null;
-
-            TribeTree tribeTree = new TribeTree(firstWarriorLands);
+            
+            TribeTreeSerializer serializer = 
+                new TribeTreeSerializer(firstWarriorLands);
 
             while ((line = reader.readLine()) != null) {
                 aux = line.split(" ");
@@ -45,15 +51,11 @@ public class App {
                 String fatherName = aux[0];
                 String childName = aux[1];
                 Integer childLands = Integer.parseInt(aux[2]);
-
-                if (tribeTree.getFirstWarriorName() == null) {
-                    tribeTree.setFirstWarriorName(fatherName);
-                }
-
-                tribeTree.insert(fatherName, childName, childLands);
+                
+                serializer.addLineSerializer(fatherName, childName, childLands);
             }
 
-            return tribeTree;
+            return serializer.generateTribeTree();
         } catch (IOException e) {
             System.err.format("An error ocurred reading the file: ", e);
         }
