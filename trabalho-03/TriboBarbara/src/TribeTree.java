@@ -1,21 +1,25 @@
+import java.text.DecimalFormat;
+
 public class TribeTree {
     private TreeNode firstWarrior;
     private TreeNode warriorWithMoreLands;
 
-    public TribeTree(String warriorName, int lands) {
+    public TribeTree(String warriorName, double lands) {
         this.firstWarrior = new TreeNode(warriorName, lands);
     }
 
     static class TreeNode {
         private Node firstChild;
         private String warriorName;
-        private int lands;
+        private double lands;
+        private int height;
 
         TreeNode() {
+            this.height = 0;
             this.lands = 0;
         }
 
-        TreeNode(String warriorName, int lands) {
+        TreeNode(String warriorName, double lands) {
             this.warriorName = warriorName;
             this.lands = lands;
         }
@@ -30,10 +34,6 @@ public class TribeTree {
 
         public String getWarriorName() {
             return this.warriorName;
-        }
-
-        public int getLands() {
-            return this.lands;
         }
     }
 
@@ -51,40 +51,66 @@ public class TribeTree {
         return this.firstWarrior;
     }
 
-    public TreeNode getWarriorWithMoreLands() {
+    public String getWarriorWithMoreLands() {
         if (this.firstWarrior == null)
             return null;
             
         this.warriorWithMoreLands = new TreeNode();
 
-        calculateLandsHelper(this.firstWarrior, 0);
+        calculateLandsHelper(this.firstWarrior, 1);
 
-        return this.warriorWithMoreLands;
+        DecimalFormat df = new DecimalFormat("#.00");
+
+        return this.warriorWithMoreLands.warriorName
+            .concat(" com ")
+            .concat(df.format(this.warriorWithMoreLands.lands))
+            .concat(" terras");
     }
 
-    private void calculateLandsHelper(TreeNode treeNode, int fatherChildren) {
-        Node currentChild = treeNode.getFirstChild();
-        int numberOfChildren = 0;
-        
-        while (currentChild != null) {
-            int totalLands = fatherChildren != 0 
-                ? (treeNode.lands / fatherChildren) + currentChild.child.lands
-                : currentChild.child.lands;
+    private void calculateLandsHelper(TreeNode treeNode, int height) {
+        Node currentFatherChild = treeNode.getFirstChild();
+        int fatherChildren = 0;
 
-            if (totalLands > this.warriorWithMoreLands.lands) {
-                warriorWithMoreLands = currentChild.child;
-            }
-
-            numberOfChildren++;
-            currentChild = currentChild.next;
+        while (currentFatherChild != null) {
+            fatherChildren++;
+            currentFatherChild = currentFatherChild.next;
         }
 
-        currentChild = treeNode.getFirstChild();
+        currentFatherChild = treeNode.getFirstChild();
 
-        while (currentChild != null) {
-            calculateLandsHelper(currentChild.child, numberOfChildren);
+        while (currentFatherChild != null) {
+            Node currentChild = currentFatherChild.child.getFirstChild();
 
-            currentChild = currentChild.next;
+            double inheritedLands = 0;
+    
+            if (fatherChildren != 0)
+                inheritedLands = treeNode.lands / fatherChildren;
+            
+            currentFatherChild.child.lands += inheritedLands;
+
+            int numberOfChildren = 0;
+    
+            while (currentChild != null) {
+                numberOfChildren++;
+                currentChild = currentChild.next;
+            }
+
+            if (numberOfChildren == 0) {
+                if (height > warriorWithMoreLands.height || 
+                    (
+                        height == warriorWithMoreLands.height &&
+                        currentFatherChild.child.lands > 
+                        this.warriorWithMoreLands.lands
+                    )
+                ) {
+                    warriorWithMoreLands = currentFatherChild.child;
+                    warriorWithMoreLands.height = height;
+                }
+            }
+
+            calculateLandsHelper(currentFatherChild.child, height + 1);
+
+            currentFatherChild = currentFatherChild.next;
         }
     }
 
@@ -134,5 +160,53 @@ public class TribeTree {
                 treeNode.firstChild, 
                 new TreeNode(childName, childLands)
             );
+    }
+
+    public String generateGraphvizString(String testPath) {
+        final String graphvizHeader = "echo 'digraph { ";
+        final String graphvizFooter = "}' | dot -Tsvg -Nshape=rect > "
+            .concat(testPath.replace(".txt", ".svg"));
+
+        DecimalFormat df = new DecimalFormat("#.00");
+
+        String graphviz = graphvizHeader
+            .concat(firstWarrior.warriorName)
+            .concat(" [label=<")
+            .concat(firstWarrior.warriorName)
+            .concat("<BR />")
+            .concat(df.format(firstWarrior.lands))
+            .concat(">] ");
+
+        return appendGraphvizNodes(graphviz, firstWarrior)
+            .concat(graphvizFooter);
+    }
+
+    private String appendGraphvizNodes(String graphviz, TreeNode treeNode) {
+        Node currentChild = treeNode.firstChild;
+
+        while (currentChild != null) {
+            graphviz = graphviz
+                .concat(treeNode.warriorName)
+                .concat(" -> ")
+                .concat(currentChild.child.warriorName)
+                .concat(" ");
+
+            DecimalFormat df = new DecimalFormat("#.00");
+
+            graphviz = graphviz
+                .concat(currentChild.child.warriorName)
+                .concat(" [label=<")
+                .concat(currentChild.child.warriorName)
+                .concat("<BR />")
+                .concat(df.format(currentChild.child.lands))
+                .concat(">] ");
+
+            graphviz = graphviz
+                .concat(appendGraphvizNodes("", currentChild.child));
+
+            currentChild = currentChild.next;
+        }
+
+        return graphviz;
     }
 }

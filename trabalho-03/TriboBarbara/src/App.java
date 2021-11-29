@@ -1,4 +1,6 @@
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -9,19 +11,33 @@ public class App {
     public static void main(String[] args) {
         String[] testPaths = new String[] { 
             "caso04.txt",
-            // "caso05.txt",
-            // "caso06.txt",
-            // "caso07.txt",
-            // "caso08.txt",
-            // "caso09.txt",
-            // "caso10.txt",
+            "caso05.txt",
+            "caso06.txt",
+            "caso07.txt",
+            "caso08.txt",
+            "caso09.txt",
+            "caso10.txt",
         };
 
         for (String testPath : testPaths) {
+            long initialTime = System.currentTimeMillis();
+
             TribeTree tribeTree = readTestCase(testPath);
-            System.out.println(
-                tribeTree.getWarriorWithMoreLands().getWarriorName()
-            );
+
+            // generateGraphvizFile(tribeTree, testPath);
+
+            System.out.println("\nCaso de teste: ");
+            System.out.println("-> " + testPath);
+            
+            System.out.println("Guerreiro da última geração da tribo com mais terras (após herança): ");
+            System.out.println("-> " + tribeTree.getWarriorWithMoreLands());
+
+            long finalTime = System.currentTimeMillis() - initialTime;
+
+            System.out.println("Tempo de execução: ");
+            System.out.println("-> " + finalTime + " milissegundos");
+            
+            // generateGraphvizFile(tribeTree, testPath);
         }
     }
 
@@ -61,5 +77,24 @@ public class App {
         }
 
         return null;
+    }
+
+    static void generateGraphvizFile(
+        TribeTree tribeTree, 
+        String testPath
+    ) {
+        try {
+            File dir = new File(
+                Paths.get("graphviz").toAbsolutePath().toString()
+            );
+            dir.mkdir();
+
+            FileWriter fw = new FileWriter("graphviz/" + testPath);
+            
+            fw.write(tribeTree.generateGraphvizString(testPath));
+            fw.close();
+        } catch (IOException e) {
+            System.err.format("An error ocurred generating the file: ", e);
+        }
     }
 }
